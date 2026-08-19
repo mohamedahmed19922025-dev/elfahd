@@ -1288,6 +1288,7 @@ def View_data():
 
 def report_page():
     st.title("تقارير")
+    today = pd.Timestamp.today().normalize()
     df = st.session_state.df
     if df.empty:
         st.info("لا توجد بيانات")
@@ -1310,11 +1311,24 @@ def report_page():
                           (dfr['تاريخ إستلام الورق'].astype(str).str.strip() == 'nan')))]
 
             dfr['تاريخ إستلام الورق'] = dfr['تاريخ إستلام الورق'].fillna('_____')
-            dfr.loc[(dfr['الحالة'].str.strip() == 'مدفوع') &
-                    ((dfr['ساحة الكشف'].isna()) |
-                     (dfr['ساحة الكشف'].astype(str).str.strip() == '') |
-                     (dfr['ساحة الكشف'].astype(str).str.strip() == '_____')),
-                    'الحالة'] = 'مدفوع مسبق'
+            yard_empty = (
+                dfr['ساحة الكشف'].isna() |
+                (dfr['ساحة الكشف'].astype(str).str.strip() == '') |
+                (dfr['ساحة الكشف'].astype(str).str.strip() == '_____')
+            )
+            yard_filled = (
+                (~dfr['ساحة الكشف'].isna()) &
+                (dfr['ساحة الكشف'].astype(str).str.strip() != '') &
+                (dfr['ساحة الكشف'].astype(str).str.strip() != '_____')
+            )
+            expected_arrival = pd.to_datetime(dfr['التاريخ المتوقع الوصول'], errors='coerce')
+            dfr.loc[
+                (dfr['الحالة'].str.strip() == 'مدفوع') &
+                (
+                    yard_empty |
+                    (yard_filled & expected_arrival.notna() & (expected_arrival > today))
+                ),
+                'الحالة'] = 'مدفوع مسبق'
 
             dfr.loc[(dfr['الحالة'].str.strip() == 'مدفوع') &
                     (~((dfr['ساحة الكشف'].isna()) |
@@ -1416,8 +1430,29 @@ def report_page():
 
             required_cols = ['ساحة الكشف', 'تاريخ إستلام الورق', 'رقم ACID', 'الحالة']
             if all(col in df_last.columns for col in required_cols):
+                if "التاريخ المتوقع الوصول" in df_last.columns:
+                    df_last["التاريخ المتوقع الوصول"] = pd.to_datetime(
+                        df_last["التاريخ المتوقع الوصول"],
+                        errors="coerce",
+                        dayfirst=True,
+                    )
+                yard_empty = (
+                    df_last['ساحة الكشف'].isna() |
+                    (df_last['ساحة الكشف'].astype(str).str.strip() == '') |
+                    (df_last['ساحة الكشف'].astype(str).str.strip() == '_____')
+                )
+                yard_filled = (
+                    (df_last['ساحة الكشف'].notna()) &
+                    (df_last['ساحة الكشف'].astype(str).str.strip() != '') &
+                    (df_last['ساحة الكشف'].astype(str).str.strip() != '_____')
+                )
+                arrival_future = (
+                    yard_filled &
+                    df_last["التاريخ المتوقع الوصول"].notna() &
+                    (df_last["التاريخ المتوقع الوصول"] > today)
+                )
                 df_waiting = df_last[
-                    (df_last['ساحة الكشف'].isna() | (df_last['ساحة الكشف'].astype(str).str.strip() == '')) &
+                    (yard_empty | arrival_future) &
                     (df_last['تاريخ إستلام الورق'].notna()) &
                     (df_last["رقم ACID"].notna()) &
                     (~df_last['الحالة'].astype(str).str.strip().isin(['منتهى', 'مُعَلَّق']))
@@ -1427,7 +1462,7 @@ def report_page():
                 if "التاريخ المتوقع الوصول" in df_waiting.columns:
                     df_waiting["التاريخ المتوقع الوصول"] = df_waiting["التاريخ المتوقع الوصول"].replace('_____', 'لم يستدل')
                     df_waiting.loc[(df_waiting['الحالة'].isna()) | (df_waiting['الحالة'].astype(str).str.strip() == '') | (df_waiting['الحالة'].astype(str).str.strip() == 'nan'), 'الحالة'] = 'انتظار وصول'
-                    df_waiting["التاريخ المتوقع الوصول_temp"] = pd.to_datetime(df_waiting["التاريخ المتوقع الوصول"], errors='coerce', dayfirst=True)
+                    df_waiting["التاريخ المتوقع الوصول_temp"] = pd.to_datetime(df_waiting["التاريخ المتوقع الوصول"].replace('لم يستدل', pd.NaT), errors='coerce', dayfirst=True)
                     df_waiting = df_waiting.sort_values(by="التاريخ المتوقع الوصول_temp", ascending=True, na_position='last')
                     df_waiting = df_waiting.drop(columns=["التاريخ المتوقع الوصول_temp"])
                     if "إسم الشركة" in df_waiting.columns:
