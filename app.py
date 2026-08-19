@@ -1286,7 +1286,7 @@ def report_page():
 
     with st.expander("📄 تقرير الحالات"):
         try:
-            excluded = ['مـٌعَلـَق', 'منتهى', 'تحت التسوية', 'جارى تسليم الإفراج']
+            excluded = ['مـٌعَلـَق', 'منتهى', 'تحت التسوية', 'جارى تسليم الإفراج' ,'_____']
             status_col = df['الحالة'].astype(str).str.strip()
             dfr = df[~(
                 status_col.isin(excluded) |
