@@ -629,6 +629,12 @@ def display_certificate_form(selected_row, df, sorted_companies, sorted_authoriz
     if "edit_custom_authorization_mode" not in st.session_state:
         st.session_state.edit_custom_authorization_mode = False
 
+    if not isinstance(selected_row, dict):
+        selected_row = selected_row.to_dict()
+    for _k in list(selected_row.keys()):
+        if pd.isna(selected_row[_k]):
+            selected_row[_k] = ""
+
     cert_key = f"invoice_values_{selected_row.get('رقم ACID', 'unknown')}"
     if "current_cert_key" not in st.session_state or st.session_state.current_cert_key != cert_key or "edit_invoice_values" not in st.session_state:
         st.session_state.current_cert_key = cert_key
