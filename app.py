@@ -285,7 +285,7 @@ def show_login_screen(users):
         return
     names = list(users.keys())
     with st.form("login"):
-        username = st.text_input("المستخدم", names)
+        username = st.text_input("المستخدم")
         password = st.text_input("كلمة المرور", type="password")
         ok = st.form_submit_button("دخول", type="primary", use_container_width=True)
     if ok:
