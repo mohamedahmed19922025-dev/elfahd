@@ -1,19 +1,9 @@
-"""
-نسخة أونلاين من tstv8.py
-=========================
-- البيانات الرئيسية تُقرأ وتُحفظ في Google Sheets (بدل office5.xlsx المحلي)
-- المستخدمون والصلاحيات من .streamlit/secrets.toml أو من dashboard الأسرار في Streamlit Cloud
-- إزالة كل الوظائف المعتمدة على الملفات المحلية / Windows (تحفظ، تظلم، سيارات، حاويات، رفع وثائق)
-- التحديث من MTS يتم برفع ملف Excel من الواجهة
-"""
-
 import base64
 import datetime
 import io
 import os
 import re
 import uuid
-
 import gspread
 import pandas as pd
 import streamlit as st
@@ -82,7 +72,7 @@ def apply_theme():
 
 def show_footer():
     st.markdown(
-        "<div style='position: fixed; bottom: 10px; right: 10px; color: #5fc9f3; font-size: 18px;'>ZoOz ©</div>",
+        "<div style='position: fixed; bottom: 10px; left: 10px; color: #5fc9f3; font-size: 18px;'>ZoOz ©</div>",
         unsafe_allow_html=True,
     )
 
