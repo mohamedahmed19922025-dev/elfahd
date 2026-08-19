@@ -1465,8 +1465,6 @@ def report_page():
                     df_waiting["التاريخ المتوقع الوصول_temp"] = pd.to_datetime(df_waiting["التاريخ المتوقع الوصول"].replace('لم يستدل', pd.NaT), errors='coerce', dayfirst=True)
                     df_waiting = df_waiting.sort_values(by="التاريخ المتوقع الوصول_temp", ascending=True, na_position='last')
                     df_waiting = df_waiting.drop(columns=["التاريخ المتوقع الوصول_temp"])
-                    if "إسم الشركة" in df_waiting.columns:
-                        df_waiting = df_waiting.sort_values(by="إسم الشركة", ascending=True, na_position='last', key=lambda col: col.astype(str).str.strip())
 
                 headers_waiting = ["إسم الشركة", "تاريخ إستلام الورق", "رقم ACID", "رقم الشهادة", "التوكيل",
                                    "رقم البوليصة", "عدد الحاويات", "العدد", "الصنف", "التاريخ المتوقع الوصول"]
@@ -1514,95 +1512,6 @@ def report_page():
                 st.warning("الأعمدة المطلوبة غير متوفرة في البيانات")
         except Exception as e:
             st.error(f"خطأ في تقرير انتظار الوصول: {e}")
-
-    with st.expander("تقرير العالمية"):
-        try:
-            df_last = df.tail(70) if len(df) >= 70 else df
-            if 'إسم الشركة' in df_last.columns and 'الحالة' in df_last.columns:
-                df_global_waiting = df_last[
-                    df_last['إسم الشركة'].astype(str).str.contains('العالميه', case=False, na=False) &
-                    (df_last['ساحة الكشف'].isna() | (df_last['ساحة الكشف'].astype(str).str.strip() == '')) &
-                    (df_last['تاريخ إستلام الورق'].notna())
-                ].copy()
-
-                df_global_status = df_last[
-                    df_last['إسم الشركة'].astype(str).str.contains('العالميه', case=False, na=False) &
-                    (~df_last['الحالة'].astype(str).str.strip().isin(['منتهى', 'مُعَلَّق', '']))
-                ].copy()
-
-                headers_status = ["إسم الشركة", "رقم الشهادة", "رقم ACID", "طلب فحص واردات", "طلب سلامة غذاء",
-                                  "دمغة وموازين", "العدد", "عدد الحاويات", "الصنف", "تاريخ الكشف", "ساحة الكشف",
-                                  "رقم البوليصة", "تاريخ 46", "ملاحظات"]
-                headers_waiting = ["إسم الشركة", "تاريخ إستلام الورق", "رقم ACID", "رقم الشهادة", "التوكيل",
-                                   "رقم البوليصة", "عدد الحاويات", "العدد", "الصنف", "التاريخ المتوقع الوصول"]
-
-                html_international = """
-                <!DOCTYPE html>
-                <html lang="ar" dir="rtl">
-                <head><meta charset="UTF-8">
-                <title>التقرير الدولي</title>
-                <style>
-                body { font-family: Arial; background: #f4f6f7; padding: 30px; }
-                .company { text-align: center; font-size: 32px; font-weight: bold; color: darkblue; margin-bottom: 40px; }
-                .status { font-size: 22px; font-weight: bold; color: darkred; margin: 30px 0 10px; border-right: 6px solid darkred; padding-right: 10px; }
-                table { width: 100%; border-collapse: collapse; background: white; margin-bottom: 25px; }
-                th { background: #dff9fb; padding: 8px; border: 1px solid #ccc; }
-                td { padding: 8px; border: 1px solid #ddd; text-align: center; }
-                </style></head><body>
-                <div class="company">مؤسسة الفهد للخدمات الملاحية و الجمركية</div>
-                """
-
-                def row_html(r, headers):
-                    out = "<tr>"
-                    for h in headers:
-                        if h not in r.index:
-                            continue
-                        value = r.get(h, '_____')
-                        if pd.isna(value) or str(value) == 'nan' or str(value) == '':
-                            value = '_____'
-                        if h == "رقم الشهادة":
-                            try:
-                                value = str(int(float(value)))
-                            except Exception:
-                                pass
-                        out += f"<td>{value}</td>"
-                    return out + "</tr>"
-
-                if not df_global_waiting.empty:
-                    html_international += '<div class="status">انتظار وصول (العالمية)</div><table><tr>'
-                    for h in headers_waiting:
-                        html_international += f"<th>{h}</th>"
-                    html_international += "</tr>"
-                    for _, r in df_global_waiting.iterrows():
-                        html_international += row_html(r, headers_waiting)
-                    html_international += "</table>"
-
-                if not df_global_status.empty:
-                    for status in df_global_status['الحالة'].unique():
-                        if pd.notna(status) and str(status).strip() != '':
-                            group = df_global_status[df_global_status['الحالة'] == status]
-                            if not group.empty:
-                                html_international += f'<div class="status">{status} (العالمية)</div><table><tr>'
-                                for h in headers_status:
-                                    if h in group.columns:
-                                        html_international += f"<th>{h}</th>"
-                                html_international += "</tr>"
-                                for _, r in group.iterrows():
-                                    html_international += row_html(r, headers_status)
-                                html_international += "</table>"
-
-                html_international += "</body></html>"
-                st.components.v1.html(html_international, height=600, scrolling=True)
-                st.download_button(
-                    "⬇️ تحميل تقرير العالمية HTML",
-                    data=html_international,
-                    file_name="International_Report.html",
-                    mime="text/html",
-                )
-            else:
-                st.warning("الأعمدة المطلوبة غير متوفرة")
-        except Exception as e:
-            st.error(f"خطأ في تقرير العالمية: {e}")
 
 
 # =========================
