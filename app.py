@@ -1292,10 +1292,9 @@ def report_page():
                 status_col.isin(excluded) |
                 (status_col == '') |
                 (status_col == 'nan') |
-                (status_col.isna()) |
-                (status_col == '_____')
-               
-
+                (status_col == '<NA>') |
+                (status_col == '_____') |
+                (status_col.isna())
             )].copy()
 
             dfr = dfr[~((dfr['إسم الشركة'].astype(str).str.contains('هيات')) &
