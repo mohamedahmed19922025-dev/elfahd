@@ -654,20 +654,12 @@ def display_certificate_form(selected_row, df, sorted_companies, sorted_authoriz
 
     col1, col2 = st.columns(2)
     with col1:
-        status_options = df['الحالة'].unique().tolist() if not df.empty and 'الحالة' in df.columns else []
-        current_value = selected_row.get("الحالة", None)
-        nan_index = next((i for i, v in enumerate(status_options) if pd.isna(v)), 0) if status_options else 0
-        # Safe equality that always returns bool
-        def _eq(a, b):
-            if pd.isna(a) and pd.isna(b):
-                return True
-            if pd.isna(a) or pd.isna(b):
-                return False
-            return a == b
-        if pd.isna(current_value):
-            default_index = nan_index
-        else:
-            default_index = next((i for i, v in enumerate(status_options) if _eq(v, current_value)), nan_index)
+        # Get unique statuses as strings, filter out NA/nan, add empty option at start
+        raw_opts = df['الحالة'].dropna().astype(str).unique().tolist() if not df.empty and 'الحالة' in df.columns else []
+        status_options = [""] + [s for s in raw_opts if s.strip() and s.lower() != "nan"]
+        current_value = selected_row.get("الحالة", "")
+        # current_value is already "" if was NA (converted at line 626)
+        default_index = status_options.index(current_value) if current_value in status_options else 0
         st.selectbox("الحالة", options=status_options, index=default_index, key="edit_current_status")
 
     col1, col2, col3 = st.columns(3)
