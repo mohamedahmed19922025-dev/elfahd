@@ -654,16 +654,11 @@ def display_certificate_form(selected_row, df, sorted_companies, sorted_authoriz
 
     col1, col2 = st.columns(2)
     with col1:
-        status_options = df['الحالة'].dropna().astype(str).unique().tolist() if not df.empty and 'الحالة' in df.columns else []
+        status_options = df['الحالة'].unique().tolist() if not df.empty and 'الحالة' in df.columns else []
         current_value = selected_row.get("الحالة", None)
-        if pd.isna(current_value) or str(current_value).strip() == "":
-            default_index = 0
-        elif str(current_value) in status_options:
-            default_index = status_options.index(str(current_value))
-        else:
-            default_index = 0
+        nan_index = next((i for i,v in enumerate(status_options) if pd.isna(v)), 0) if status_options else 0
+        default_index = status_options.index(current_value) if current_value in status_options else nan_index
         st.selectbox("الحالة", options=status_options, index=default_index, key="edit_current_status")
-
     col1, col2, col3 = st.columns(3)
     with col1:
         cert_number_val = selected_row.get("رقم الشهادة")
