@@ -657,11 +657,15 @@ def display_certificate_form(selected_row, df, sorted_companies, sorted_authoriz
         status_options = df['الحالة'].unique().tolist() if not df.empty and 'الحالة' in df.columns else []
         current_value = selected_row.get("الحالة", None)
         nan_index = next((i for i, v in enumerate(status_options) if pd.isna(v)), 0) if status_options else 0
-        # Use pd.isna for NA-safe membership check
+        # Safe equality check for NA values
+        def _eq(a, b):
+            if pd.isna(a) and pd.isna(b):
+                return True
+            return a == b
         if pd.isna(current_value):
             default_index = nan_index
         else:
-            default_index = next((i for i, v in enumerate(status_options) if v == current_value), nan_index)
+            default_index = next((i for i, v in enumerate(status_options) if _eq(v, current_value)), nan_index)
         st.selectbox("الحالة", options=status_options, index=default_index, key="edit_current_status")
 
     col1, col2, col3 = st.columns(3)
